@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFSe - Emissão</title>
+    <style>
+        /* Mobile-first design */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            overflow: hidden;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 15px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 150px;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #22c55e;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px 20px;
+            background-color: #22c55e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+        
+        .btn:hover {
+            background-color: #20b360;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+            margin-top: 15px;
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .recent-notes {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .recent-notes h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .note-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 4px solid #22c55e;
+        }
+        
+        .note-date {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+        
+        .note-desc {
+            font-size: 14px;
+            color: #495057;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #6c757d;
+            font-size: 13px;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            textarea {
+                min-height: 120px;
+            }
+            
+            .btn {
+                padding: 14px 16px;
+                font-size: 16px;
+            }
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #22c55e;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading .spinner {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NFSe - Emissão</h1>
+            <p class="subtitle">Gerencie suas notas fiscais de forma simples e rápida</p>
+        </header>
+        
+        <div class="form-group">
+            <label for="dataInput">Cole os dados da nota fiscal</label>
+            <textarea id="dataInput" placeholder="Cole aqui os dados da nota fiscal no formato JSON ou XML..."></textarea>
+        </div>
+        
+        <button id="emitBtn" class="btn">Emitir Nota Fiscal</button>
+        <button id="clearBtn" class="btn btn-secondary">Limpar</button>
+        
+        <div class="recent-notes">
+            <h3>Notas Recentes</h3>
+            <div id="notesList">
+                <!-- Notas serão carregadas via JavaScript -->
+            </div>
+        </div>
+        
+        <footer>
+            <p>NFSe - Sistema de Emissão de Notas Fiscais</p>
+            <p>Simples, rápido e intuitivo</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Simulação de API
+        const API_BASE = '/api/nfse/';
+        
+        // Carregar notas recentes
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRecentNotes();
+        });
+        
+        // Event listener para emissão
+        document.getElementById('emitBtn').addEventListener('click', function() {
+            const data = document.getElementById('dataInput').value.trim();
+            
+            if (!data) {
+                alert('Por favor, cole os dados da nota fiscal.');
+                return;
+            }
+            
+            // Mostrar loading
+            const btn = document.getElementById('emitBtn');
+            const originalText = btn.textContent;
+            btn.innerHTML = '<div class="spinner"></div>';
+            btn.disabled = true;
+            
+            // Simular chamada API
+            setTimeout(() => {
+                // Aqui seria a chamada real para a API
+                // fetch(API_BASE + 'emitir', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ data: data })
+                // })
+                
+                // Para demonstração, vamos adicionar uma nota fictícia
+                const note = {
+                    id: Date.now(),
+                    date: new Date().toLocaleString('pt-BR'),
+                    status: 'success',
+                    description: 'Nota emitida automaticamente'
+                };
+                
+                addNoteToList(note);
+                document.getElementById('dataInput').value = '';
+                
+                // Remover loading
+                btn.textContent = originalText;
+                btn.disabled = false;
+                
+                alert('Nota fiscal emitida com sucesso!');
+            }, 1500);
+        });
+        
+        // Limpar formulário
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            document.getElementById('dataInput').value = '';
+        });
+        
+        // Carregar notas recentes
+        function loadRecentNotes() {
+            // Simular busca de notas da API
+            const mockNotes = [
+                {
+                    id: 1,
+                    date: '20/05/2024 14:30',
+                    status: 'success',
+                    description: 'Serviços de consultoria'
+                },
+                {
+                    id: 2,
+                    date: '19/05/2024 10:15',
+                    status: 'success',
+                    description: 'Desenvolvimento de site'
+                },
+                {
+                    id: 3,
+                    date: '18/05/2024 16:45',
+                    status: 'success',
+                    description: 'Manutenção de sistema'
+                }
+            ];
+            
+            const notesList = document.getElementById('notesList');
+            notesList.innerHTML = '';
+            
+            mockNotes.forEach(note => {
+                addNoteToList(note);
+            });
+        }
+        
+        // Adicionar nota à lista
+        function addNoteToList(note) {
+            const notesList = document.getElementById('notesList');
+            const noteElement = document.createElement('div');
+            noteElement.className = 'note-item';
+            noteElement.innerHTML = `
+                <div class="note-date">${note.date}</div>
+                <div class="note-desc">${note.description}</div>
+                <span class="status status-${note.status}">${note.status === 'success' ? 'Sucesso' : 'Erro'}</span>
+            `;
+            notesList.insertBefore(noteElement, notesList.firstChild);
+        }
+    </script>
+</body>
+</html>

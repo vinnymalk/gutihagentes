@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFS-e — Notas Fiscais</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0b0c1a;color:#d0d8e8;font-family:'Fira Code','Cascadia Code',monospace;min-height:100vh;padding:20px}
+    .container{max-width:900px;margin:0 auto}
+    h1{color:#00d4ff;font-size:18px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+    .subtitle{color:#556;font-size:11px;margin-bottom:16px}
+    .card{background:rgba(255,255,255,0.03);border:1px solid rgba(0,212,255,0.12);border-radius:8px;padding:14px;margin-bottom:12px}
+    .empty{color:#445;padding:20px;text-align:center;font-size:12px}
+
+    /* Filters */
+    .filtros{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+    .filtros select,.filtros input{background:rgba(255,255,255,0.05);border:1px solid rgba(0,212,255,0.12);border-radius:4px;color:#d0d8e8;font-size:11px;font-family:inherit;padding:7px 8px}
+    .filtros select:focus,.filtros input:focus{outline:none;border-color:#00d4ff}
+    .filtros select{min-width:110px}
+    .filtros input[type="date"]{min-width:120px}
+    .filtros input::placeholder{color:#445;font-size:10px}
+    .filtros .btn-nova{background:#00d4ff;color:#0b0c1a;border:none;border-radius:4px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;margin-left:auto}
+    .filtros .btn-nova:hover{background:#00ffee}
+    .filtros .btn-limpar{background:transparent;border:1px solid rgba(0,212,255,0.15);color:#556;border-radius:4px;padding:7px 10px;font-size:10px;cursor:pointer;font-family:inherit}
+    .filtros .btn-limpar:hover{color:#00d4ff;border-color:rgba(0,212,255,0.3)}
+
+    /* Table */
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th{color:#556;padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:left;font-weight:400;font-size:9px;text-transform:uppercase;letter-spacing:1px}
+    td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(0,212,255,0.03)}
+    .table-wrap{overflow-x:auto;margin:0 -14px;padding:0 14px}
+    .tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;text-transform:uppercase}
+    .tag-verde{background:rgba(0,255,136,0.1);color:#00ff88}
+    .tag-vermelha{background:rgba(255,68,68,0.1);color:#ff4444}
+    .tag-amarela{background:rgba(255,170,0,0.1);color:#ffaa00}
+    .acao-link{color:#00d4ff;text-decoration:none;font-size:10px;cursor:pointer;opacity:0.7;transition:opacity 0.15s;display:inline-block;padding:2px 4px}
+    .acao-link:hover{opacity:1;text-decoration:underline}
+    .acao-link.danger{color:#ff4444}
+
+    /* Cards per note on mobile */
+    .nota-card{display:none}
+
+    /* Detail Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.15s}
+    .modal{background:#13142a;border:1px solid rgba(0,212,255,0.15);border-radius:10px;padding:20px;width:100%;max-width:380px;max-height:85vh;overflow-y:auto;animation:scaleIn 0.2s}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+    .modal h3{color:#00d4ff;font-size:14px;margin-bottom:10px}
+    .modal label{color:#556;font-size:9px;display:block;margin:8px 0 2px;text-transform:uppercase;letter-spacing:1px}
+    .modal .campo{background:rgba(255,255,255,0.03);border-radius:4px;padding:6px 10px;font-size:12px;color:#d0d8e8;word-break:break-word}
+    .modal .flex{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+    .modal button{padding:8px 16px;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+    .modal .primario{background:#00d4ff;color:#0b0c1a}
+    .modal .primario:hover{background:#00ffee}
+    .modal .secundario{background:transparent;border:1px solid rgba(0,212,255,0.2);color:#00d4ff}
+    .modal .btn-cancelar-nota{background:rgba(255,68,68,0.15);color:#ff4444;border:1px solid rgba(255,68,68,0.3)}
+    .modal .btn-cancelar-nota:hover{background:rgba(255,68,68,0.25)}
+    .modal .btn-emitir-modal{background:#00ff88 !important;color:#0b0c1a !important}
+    .modal .btn-emitir-modal:hover{background:#33ff66 !important}
+
+    /* Quick emit form in modal */
+    .modal input,.modal select,.modal textarea{width:100%;padding:8px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(0,212,255,0.12);border-radius:4px;color:#d0d8e8;font-size:12px;font-family:inherit}
+    .modal input:focus,.modal select:focus,.modal textarea:focus{outline:none;border-color:#00d4ff}
+    .modal textarea{resize:vertical;min-height:50px;font-size:11px}
+
+    /* Confirm modal */
+    .modal-confirm p{font-size:12px;color:#889;margin-bottom:14px;line-height:1.5}
+    .modal-confirm .btn-confirma{background:rgba(255,68,68,0.15);color:#ff4444;border:1px solid rgba(255,68,68,0.3)}
+
+    /* Toast */
+    .toast-container{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:90%;max-width:400px}
+    .toast{background:#1a1b2e;border:1px solid rgba(0,212,255,0.2);border-radius:6px;padding:10px 16px;font-size:12px;color:#d0d8e8;box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:toastIn 0.25s ease;pointer-events:auto;text-align:center;width:100%}
+    .toast.success{border-color:rgba(0,255,136,0.3);color:#00ff88}
+    .toast.error{border-color:rgba(255,68,68,0.3);color:#ff4444}
+    .toast.info{border-color:rgba(0,212,255,0.3);color:#00d4ff}
+    @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .toast-out{animation:toastOut 0.25s ease forwards}
+    @keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-10px)}}
+
+    /* Loading */
+    .loader{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,212,255,0.12);border-top-color:#00d4ff;border-radius:50%;animation:spin 0.7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+    @media (max-width:600px){
+      body{padding:12px}
+      h1{font-size:16px}
+      .filtros{gap:4px}
+      .filtros select{min-width:90px;font-size:10px;padding:6px}
+      .filtros input[type="date"]{min-width:80px;font-size:10px;padding:6px}
+      .filtros .btn-nova{width:100%;margin-top:4px;margin-left:0}
+      .grid-2{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>📄 Notas Fiscais</h1>
+  <div class="subtitle">Emissão e Gerenciamento</div>
+
+  <!-- Filters -->
+  <div class="filtros">
+    <select id="filtro-status" onchange="loadNotas()">
+      <option value="">Status</option>
+      <option value="emitida">✅ Emitida</option>
+      <option value="cancelada">✕ Cancelada</option>
+      <option value="reemitida">🔄 Reemitida</option>
+    </select>
+    <input type="date" id="filtro-data-ini" onchange="loadNotas()" title="Data início">
+    <input type="date" id="filtro-data-fim" onchange="loadNotas()" title="Data fim">
+    <button class="btn-nova" onclick="abrirModalEmitir()">+ Nova Nota</button>
+  </div>
+
+  <!-- Status bar -->
+  <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+    <input id="filtro-cliente-input" placeholder="Buscar por cliente..." style="flex:1;min-width:120px;background:rgba(255,255,255,0.04);border:1px solid rgba(0,212,255,0.1);border-radius:4px;padding:7px 10px;color:#d0d8e8;font-size:11px;font-family:inherit" oninput="loadNotasDebounced()">
+    <button class="btn-limpar" onclick="limparFiltros()">✕ Limpar</button>
+  </div>
+
+  <!-- Notes list -->
+  <div class="card" id="notas-list" style="padding:0 14px 14px">
+    <div class="empty"><span class="loader"></span> Carregando...</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+<!-- Modal -->
+<div id="modal-container"></div>
+
+<script>
+/* ===== API ===== */
+async function api(path, opts = {}) {
+  const defaultHeaders = { 'Content-Type': 'application/json' };
+  const res = await fetch('/api/nfse/' + path, {
+    headers: { ...defaultHeaders, ...opts.headers },
+    ...opts,
+  });
+  if (res.status === 401) { location.href = '/nfse/login'; return null; }
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+/* ===== FORMATTERS ===== */
+function fmtValor(v) { return 'R$ ' + (v || 0).toFixed(2).replace('.', ','); }
+
+function statusTag(s) {
+  if (s === 'emitida') return '<span class="tag tag-verde">Emitida</span>';
+  if (s === 'cancelada') return '<span class="tag tag-vermelha">Cancelada</span>';
+  if (s === 'reemitida') return '<span class="tag tag-amarela">Reemitida</span>';
+  return s || '--';
+}
+
+function fmtData(d) {
+  if (!d) return '--';
+  const parts = d.split('-');
+  if (parts.length === 3) return parts[2] + '/' + parts[1] + '/' + parts[0];
+  return d;
+}
+
+/* ===== DEBOUNCE ===== */
+let loadTimer = null;
+function loadNotasDebounced() {
+  if (loadTimer) clearTimeout(loadTimer);
+  loadTimer = setTimeout(loadNotas, 300);
+}
+
+/* ===== TOAST ===== */
+function toast(msg, tipo) {
+  tipo = tipo || 'info';
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast ' + tipo;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('toast-out');
+    setTimeout(() => el.remove(), 260);
+  }, 3000);
+}
+
+/* ===== MODAL ===== */
+function abrirModal(html) {
+  document.getElementById('modal-container').innerHTML = html;
+}
+
+function fecharModal() {
+  document.getElementById('modal-container').innerHTML = '';
+  window._confirmCallback = null;
+}
+
+function confirmar(msg, onConfirm) {
+  abrirModal(
+    '<div class="modal-overlay" onclick="if(event.target===this)fecharModal()">' +
+    '<div class="modal modal-confirm">' +
+    '<h3>⚠️ Confirmação</h3>' +
+    '<p>' + msg + '</p>' +
+    '<div class="flex">' +
+      '<button class="btn-confirma" onclick="execConfirm()">Sim, confirmar</button>' +
+      '<button class="secundario" onclick="fecharModal()">Cancelar</button>' +
+    '</div>' +
+    '</div></div>'
+  );
+  window._confirmCallback = onConfirm;
+}
+
+function execConfirm() {
+  if (typeof window._confirmCallback === 'function') window._confirmCallback();
+  fecharModal();
+}
+
+/* ===== LIMPAR FILTROS ===== */
+function limparFiltros() {
+  document.getElementById('filtro-status').value = '';
+  document.getElementById('filtro-data-ini').value = '';
+  document.getElementById('filtro-data-fim').value = '';
+  document.getElementById('filtro-cliente-input').value = '';
+  loadNotas();
+}
+
+/* ===== LOAD NOTES ===== */
+async function loadNotas() {
+  const status = document.getElementById('filtro-status').value;
+  const dataIni = document.getElementById('filtro-data-ini').value;
+  const dataFim = document.getElementById('filtro-data-fim').value;
+  const clienteQuery = document.getElementById('filtro-cliente-input').value.trim();
+
+  let url = 'notas?limit=50';
+  if (status) url += '&status=' + encodeURIComponent(status);
+  if (dataIni) url += '&data_ini=' + encodeURIComponent(dataIni);
+  if (dataFim) url += '&data_fim=' + encodeURIComponent(dataFim);
+  if (clienteQuery) {
+    // Search by text — pass as extra param for backend
+    const isNum = /^\d+$/.test(clienteQuery);
+    if (isNum) {
+      url += '&cliente_id=' + clienteQuery;
+    } else {
+      url += '&search_cliente=' + encodeURIComponent(clienteQuery);
+    }
+  }
+
+  const wrap = document.getElementById('notas-list');
+  wrap.innerHTML = '<div class="empty"><span class="loader"></span> Carregando...</div>';
+
+  try {
+    const data = await api(url);
+    if (!data) return;
+    if (!data.length) {
+      wrap.innerHTML = '<div class="empty">Nenhuma nota encontrada</div>';
+      return;
+    }
+    wrap.innerHTML = '<div class="table-wrap"><table>' +
+      '<thead><tr><th>Nº</th><th>Cliente</th><th>Data</th><th>Valor</th><th>Status</th><th></th></tr></thead><tbody>' +
+      data.map(n => {
+        const acoes = [
+          '<span class="acao-link" onclick="detalheNota(' + n.id + ')" aria-label="Detalhes">🔍</span>'
+        ];
+        if (n.status === 'emitida') {
+          acoes.push(' <span class="acao-link danger" onclick="cancelarNota(' + n.id + ')" aria-label="Cancelar">✕</span>');
+        }
+        return '<tr>' +
+          '<td>' + (n.numero || (n.id ? '#' + n.id : '--')) + '</td>' +
+          '<td>' + (n.cliente_nome || '?') + '</td>' +
+          '<td>' + fmtData(n.data_emissao) + '</td>' +
+          '<td>' + fmtValor(n.valor) + '</td>' +
+          '<td>' + statusTag(n.status) + '</td>' +
+          '<td class="text-right" style="white-space:nowrap;text-align:right">' + acoes.join('') + '</td>' +
+        '</tr>';
+      }).join('') +
+      '</tbody></table></div>';
+  } catch (e) {
+    console.error(e);
+    wrap.innerHTML = '<div class="empty">Erro ao carregar notas</div>';
+    toast('Erro ao carregar notas', 'error');
+  }
+}
+
+/* ===== DETAIL MODAL ===== */
+async function detalheNota(id) {
+  try {
+    const n = await api('notas/' + id);
+    if (!n) return;
+    const acoes = n.status === 'emitida'
+      ? '<button class="btn-cancelar-nota" onclick="cancelarNota(' + n.id + '); fecharModal()">✕ Cancelar Nota</button>'
+      : '';
+    abrirModal(
+      '<div class="modal-overlay" onclick="if(event.target===this)fecharModal()">' +
+      '<div class="modal">' +
+      '<h3>📄 Nota ' + (n.numero ? '# ' + n.numero : '#' + n.id) + '</h3>' +
+      '<label>Cliente</label><div class="campo">' + (n.cliente_nome || '--') + (n.cliente_cpf ? ' (' + n.cliente_cpf + ')' : '') + '</div>' +
+      '<label>Valor</label><div class="campo">' + fmtValor(n.valor) + '</div>' +
+      '<label>Data de Emissão</label><div class="campo">' + fmtData(n.data_emissao) + '</div>' +
+      '<label>Serviço</label><div class="campo">' + (n.servico || '--') + '</div>' +
+      '<label>Protocolo</label><div class="campo">' + (n.protocolo || '--') + '</div>' +
+      '<label>Número</label><div class="campo">' + (n.numero || '--') + '</div>' +
+      '<label>Status</label><div class="campo">' + statusTag(n.status) + '</div>' +
+      '<label>Observações</label><div class="campo">' + (n.observacoes || '--') + '</div>' +
+      '<div class="flex">' +
+        acoes +
+        '<button class="secundario" onclick="fecharModal()">Fechar</button>' +
+      '</div>' +
+      '</div></div>'
+    );
+  } catch (e) { toast('Erro ao carregar detalhes', 'error'); }
+}
+
+/* ===== CANCEL NOTE ===== */
+async function cancelarNota(id) {
+  if (!id) return;
+  // If modal is open, close it first
+  fecharModal();
+  confirmar('Tem certeza que deseja <strong>cancelar</strong> esta nota?<br>Esta ação não pode ser desfeita.', async function() {
+    try {
+      const wrap = document.getElementById('notas-list');
+      wrap.innerHTML = '<div class="empty"><span class="loader"></span> Cancelando...</div>';
+      await api('cancelar/' + id, { method: 'POST' });
+      toast('✅ Nota cancelada!', 'success');
+      loadNotas();
+    } catch (e) {
+      toast('Erro ao cancelar: ' + e.message, 'error');
+      loadNotas();
+    }
+  });
+}
+
+/* ===== QUICK EMIT MODAL ===== */
+let emitClientesCache = [];
+
+async function abrirModalEmitir() {
+  try {
+    if (!emitClientesCache.length) {
+      const data = await api('clientes');
+      if (!data) return;
+      emitClientesCache = data;
+    }
+    const hoje = new Date().toISOString().split('T')[0];
+    abrirModal(
+      '<div class="modal-overlay" onclick="if(event.target===this)fecharModal()">' +
+      '<div class="modal">' +
+      '<h3>⚡ Emitir Nova Nota</h3>' +
+      '<label>Cliente *</label>' +
+      '<select id="emit-cliente"><option value="">Selecione um cliente...</option>' +
+        emitClientesCache.map(c => '<option value="' + c.id + '">' + c.nome + (c.cpf_cnpj ? ' (' + c.cpf_cnpj + ')' : '') + '</option>').join('') +
+      '</select>' +
+      '<div class="grid-2">' +
+        '<div><label>Valor (R$) *</label><input id="emit-valor" type="number" step="0.01" placeholder="0,00"></div>' +
+        '<div><label>Data Emissão</label><input id="emit-data" type="date" value="' + hoje + '"></div>' +
+      '</div>' +
+      '<label>Serviço</label><input id="emit-servico" placeholder="Ex: Consulta médica">' +
+      '<div class="grid-2">' +
+        '<div><label>Nº da Nota</label><input id="emit-numero" placeholder="Ex: 1234"></div>' +
+        '<div><label>Protocolo</label><input id="emit-protocolo" placeholder="Código"></div>' +
+      '</div>' +
+      '<label>Observações</label><textarea id="emit-obs" placeholder="Observações opcionais..."></textarea>' +
+      '<div class="flex">' +
+        '<button class="btn-emitir-modal" onclick="executarEmitir()" style="flex:1">✅ Emitir Nota</button>' +
+        '<button class="secundario" onclick="fecharModal()">Cancelar</button>' +
+      '</div>' +
+      '</div></div>'
+    );
+  } catch (e) { toast('Erro ao carregar clientes', 'error'); }
+}
+
+async function executarEmitir() {
+  const clienteId = parseInt(document.getElementById('emit-cliente').value);
+  const valor = parseFloat(document.getElementById('emit-valor').value);
+  const servico = document.getElementById('emit-servico').value;
+  const numero = document.getElementById('emit-numero').value;
+  const data = document.getElementById('emit-data').value;
+  const protocolo = document.getElementById('emit-protocolo').value;
+  const observacoes = document.getElementById('emit-obs').value;
+
+  if (!clienteId) { toast('Selecione um cliente', 'error'); return; }
+  if (!valor || valor <= 0) { toast('Informe um valor válido', 'error'); return; }
+
+  const btn = document.querySelector('#modal-container .btn-emitir-modal');
+  btn.textContent = '⏳ Emitindo...';
+  btn.disabled = true;
+
+  try {
+    await api('emitir', {
+      method: 'POST',
+      body: JSON.stringify({
+        cliente_id: clienteId,
+        valor: valor,
+        servico: servico || undefined,
+        numero: numero || undefined,
+        data_emissao: data || undefined,
+        protocolo: protocolo || undefined,
+        observacoes: observacoes || undefined,
+      }),
+    });
+    fecharModal();
+    toast('✅ Nota emitida com sucesso!', 'success');
+    loadNotas();
+  } catch (e) {
+    btn.textContent = '✅ Emitir Nota';
+    btn.disabled = false;
+    toast('Erro ao emitir: ' + e.message, 'error');
+  }
+}
+
+/* ===== URL PARAMS ===== */
+function checkUrlParams() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('nova') === '1') {
+    abrirModalEmitir();
+    // Clean URL
+    history.replaceState(null, '', window.location.pathname);
+  }
+  if (params.get('detalhe')) {
+    const id = parseInt(params.get('detalhe'));
+    if (id) {
+      detalheNota(id);
+      history.replaceState(null, '', window.location.pathname);
+    }
+  }
+  if (params.get('cliente_id')) {
+    document.getElementById('filtro-cliente-input').value = params.get('cliente_id');
+    loadNotas();
+    history.replaceState(null, '', window.location.pathname);
+  }
+}
+
+/* ===== INIT ===== */
+loadNotas();
+checkUrlParams();
+</script>
+</body>
+</html>

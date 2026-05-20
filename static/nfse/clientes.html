@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFS-e — Clientes</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0b0c1a;color:#d0d8e8;font-family:'Fira Code','Cascadia Code',monospace;min-height:100vh;padding:20px}
+    .container{max-width:800px;margin:0 auto}
+    h1{color:#00d4ff;font-size:18px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+    .subtitle{color:#556;font-size:11px;margin-bottom:16px}
+    .card{background:rgba(255,255,255,0.03);border:1px solid rgba(0,212,255,0.12);border-radius:8px;padding:14px;margin-bottom:12px}
+    .empty{color:#445;padding:20px;text-align:center;font-size:12px}
+
+    /* Search + New */
+    .top-bar{display:flex;gap:8px;margin-bottom:12px}
+    .top-bar input{flex:1;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:6px;color:#d0d8e8;font-size:13px;font-family:inherit}
+    .top-bar input:focus{outline:none;border-color:#00d4ff}
+    .top-bar input::placeholder{color:#445;font-size:12px}
+    .top-bar button{padding:10px 16px;background:#00d4ff;color:#0b0c1a;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
+    .top-bar button:hover{background:#00ffee}
+
+    /* Table */
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th{color:#556;padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:left;font-weight:400;font-size:9px;text-transform:uppercase;letter-spacing:1px}
+    td{padding:10px 6px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(0,212,255,0.03)}
+    .table-wrap{overflow-x:auto;margin:0 -14px;padding:0 14px}
+    .acao-link{color:#00d4ff;text-decoration:none;font-size:10px;cursor:pointer;opacity:0.7;transition:opacity 0.15s;display:inline-block;padding:2px 4px}
+    .acao-link:hover{opacity:1;text-decoration:underline}
+    .acao-link.danger{color:#ff4444}
+    .acao-link.verde{color:#00ff88}
+
+    /* Form card */
+    .form-card{background:rgba(0,212,255,0.04);border:1px solid #00d4ff;border-radius:8px;padding:16px;margin-bottom:12px;animation:fadeIn 0.2s}
+    .form-card h3{color:#00d4ff;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .form-full{grid-column:1/-1}
+    .form-card label{color:#556;font-size:10px;display:block;margin:8px 0 3px;text-transform:uppercase;letter-spacing:1px}
+    .form-card input{width:100%;padding:8px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(0,212,255,0.12);border-radius:4px;color:#d0d8e8;font-size:12px;font-family:inherit}
+    .form-card input:focus{outline:none;border-color:#00d4ff}
+    .form-card input::placeholder{color:#445;font-size:11px}
+    .form-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .form-actions button{padding:8px 20px;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+    .btn-salvar{background:#00d4ff;color:#0b0c1a}
+    .btn-salvar:hover{background:#00ffee}
+    .btn-cancelar{background:transparent;border:1px solid rgba(0,212,255,0.2);color:#00d4ff}
+
+    /* Toast */
+    .toast-container{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:90%;max-width:400px}
+    .toast{background:#1a1b2e;border:1px solid rgba(0,212,255,0.2);border-radius:6px;padding:10px 16px;font-size:12px;color:#d0d8e8;box-shadow:0 4px 20px rgba(0,0,0,0.4);animation:toastIn 0.25s ease;pointer-events:auto;text-align:center;width:100%}
+    .toast.success{border-color:rgba(0,255,136,0.3);color:#00ff88}
+    .toast.error{border-color:rgba(255,68,68,0.3);color:#ff4444}
+    .toast.info{border-color:rgba(0,212,255,0.3);color:#00d4ff}
+    @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .toast-out{animation:toastOut 0.25s ease forwards}
+    @keyframes toastOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-10px)}}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+    /* Confirm modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.15s}
+    .modal{background:#13142a;border:1px solid rgba(0,212,255,0.15);border-radius:10px;padding:20px;width:100%;max-width:340px;animation:scaleIn 0.2s}
+    @keyframes scaleIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
+    .modal h3{color:#00d4ff;font-size:14px;margin-bottom:8px}
+    .modal p{font-size:12px;color:#889;margin-bottom:14px;line-height:1.5}
+    .modal .flex{display:flex;gap:8px}
+    .modal button{padding:8px 18px;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+    .modal .btn-confirma{background:rgba(255,68,68,0.15);color:#ff4444;border:1px solid rgba(255,68,68,0.3)}
+    .modal .btn-confirma:hover{background:rgba(255,68,68,0.25)}
+    .modal .btn-cancela{background:transparent;border:1px solid rgba(0,212,255,0.2);color:#00d4ff}
+
+    /* Client detail row expansion on mobile */
+    .td-acoes{white-space:nowrap;text-align:right}
+    .cliente-info{font-size:9px;color:#556;margin-top:2px}
+
+    @media (max-width:480px){
+      body{padding:12px}
+      h1{font-size:16px}
+      .top-bar{flex-wrap:wrap}
+      .top-bar input{font-size:16px}
+      .top-bar button{width:100%}
+      .form-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>👥 Clientes</h1>
+  <div class="subtitle">Tomadores de Serviço</div>
+
+  <!-- Search + New -->
+  <div class="top-bar">
+    <input id="search-input" placeholder="Buscar por nome ou CPF/CNPJ..." oninput="loadClientes()" aria-label="Buscar cliente">
+    <button onclick="mostrarForm(-1)" aria-label="Novo cliente">+ Novo</button>
+  </div>
+
+  <!-- Formulário -->
+  <div id="form-cliente" class="form-card" style="display:none">
+    <h3 id="form-title">✏️ Novo Cliente</h3>
+    <div class="form-grid">
+      <div class="form-full">
+        <label>Nome *</label>
+        <input id="f-nome" placeholder="Nome completo">
+      </div>
+      <div>
+        <label>CPF / CNPJ</label>
+        <input id="f-cpf" placeholder="000.000.000-00">
+      </div>
+      <div>
+        <label>Telefone</label>
+        <input id="f-telefone" placeholder="(31) 99999-9999">
+      </div>
+      <div class="form-full">
+        <label>Endereço</label>
+        <input id="f-endereco" placeholder="Rua, nº, bairro, cidade">
+      </div>
+      <div class="form-full">
+        <label>Observações</label>
+        <input id="f-observacoes" placeholder="Anotações sobre o cliente...">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-salvar" onclick="salvarCliente()">💾 Salvar</button>
+      <button class="btn-cancelar" onclick="cancelarForm()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Lista -->
+  <div class="card" id="clientes-list" style="padding:0 14px 14px">
+    <div class="empty">Carregando...</div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+<!-- Modal -->
+<div id="modal-container"></div>
+
+<script>
+let editandoId = -1;
+
+/* ===== API ===== */
+async function api(path, opts = {}) {
+  const res = await fetch('/api/nfse/' + path, {
+    headers: {'Content-Type': 'application/json', ...opts.headers},
+    ...opts,
+  });
+  if (res.status === 401) { location.href = '/nfse/login'; return null; }
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+/* ===== TOAST ===== */
+function toast(msg, tipo) {
+  tipo = tipo || 'info';
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast ' + tipo;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('toast-out');
+    setTimeout(() => el.remove(), 260);
+  }, 3000);
+}
+
+/* ===== MODAL ===== */
+function mostrarConfirmacao(msg, onConfirm) {
+  const mc = document.getElementById('modal-container');
+  mc.innerHTML =
+    '<div class="modal-overlay" onclick="if(event.target===this)fecharModal()">' +
+    '<div class="modal">' +
+    '<h3>⚠️ Confirmação</h3>' +
+    '<p>' + msg + '</p>' +
+    '<div class="flex">' +
+      '<button class="btn-confirma" onclick="executarConfirmacao()">Sim, confirmar</button>' +
+      '<button class="btn-cancela" onclick="fecharModal()">Cancelar</button>' +
+    '</div>' +
+    '</div></div>';
+  window._confirmCallback = onConfirm;
+}
+
+function executarConfirmacao() {
+  if (typeof window._confirmCallback === 'function') window._confirmCallback();
+  fecharModal();
+}
+
+function fecharModal() {
+  document.getElementById('modal-container').innerHTML = '';
+  window._confirmCallback = null;
+}
+
+/* ===== LOAD ===== */
+async function loadClientes() {
+  const search = document.getElementById('search-input').value;
+  try {
+    const data = await api('clientes?search=' + encodeURIComponent(search));
+    if (!data) return;
+    const wrap = document.getElementById('clientes-list');
+    if (!data.length) {
+      wrap.innerHTML = '<div class="empty">' +
+        (search ? 'Nenhum cliente encontrado para "' + search + '"' : 'Nenhum cliente cadastrado') +
+        '</div>';
+      return;
+    }
+    wrap.innerHTML = '<div class="table-wrap"><table>' +
+      '<thead><tr><th>Nome</th><th>CPF/CNPJ</th><th>Telefone</th><th></th></tr></thead><tbody>' +
+      data.map(c =>
+        '<tr>' +
+          '<td>' +
+            c.nome +
+            '<div class="cliente-info">' + (c.observacoes ? '📝 ' + c.observacoes.substring(0, 40) + (c.observacoes.length > 40 ? '...' : '') : '') + '</div>' +
+          '</td>' +
+          '<td>' + (c.cpf_cnpj || '--') + '</td>' +
+          '<td>' + (c.telefone || '--') + '</td>' +
+          '<td class="td-acoes">' +
+            '<span class="acao-link" onclick="editar(' + c.id + ')" aria-label="Editar">✏️</span>' +
+            ' <span class="acao-link verde" onclick="verNotas(' + c.id + ',\'' + c.nome.replace(/'/g, "\\'") + '\')" aria-label="Ver notas">📄</span>' +
+            ' <span class="acao-link danger" onclick="confirmarExcluir(' + c.id + ',\'' + c.nome.replace(/'/g, "\\'") + '\')" aria-label="Excluir">🗑️</span>' +
+          '</td>' +
+        '</tr>'
+      ).join('') +
+      '</tbody></table></div>';
+  } catch (e) { console.error(e); toast('Erro ao carregar clientes', 'error'); }
+}
+
+/* ===== FORM ===== */
+function mostrarForm(id) {
+  editandoId = id;
+  const fc = document.getElementById('form-cliente');
+  fc.style.display = 'block';
+  fc.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  if (id === -1) {
+    document.getElementById('form-title').textContent = '✏️ Novo Cliente';
+    ['f-nome', 'f-telefone', 'f-cpf', 'f-endereco', 'f-observacoes'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  } else {
+    document.getElementById('form-title').textContent = '✏️ Editando Cliente #' + id;
+  }
+}
+
+function cancelarForm() {
+  document.getElementById('form-cliente').style.display = 'none';
+  editandoId = -1;
+}
+
+async function salvarCliente() {
+  const dados = {
+    nome: document.getElementById('f-nome').value.trim(),
+    telefone: document.getElementById('f-telefone').value.trim(),
+    cpf_cnpj: document.getElementById('f-cpf').value.trim(),
+    endereco: document.getElementById('f-endereco').value.trim(),
+    observacoes: document.getElementById('f-observacoes').value.trim(),
+  };
+  if (!dados.nome) { toast('Nome é obrigatório', 'error'); return; }
+
+  try {
+    if (editandoId > 0) {
+      await api('clientes/' + editandoId, { method: 'PUT', body: JSON.stringify(dados) });
+      toast('✅ Cliente atualizado!', 'success');
+    } else {
+      await api('clientes', { method: 'POST', body: JSON.stringify(dados) });
+      toast('✅ Cliente cadastrado!', 'success');
+    }
+    cancelarForm();
+    loadClientes();
+  } catch (e) {
+    toast('Erro: ' + e.message, 'error');
+  }
+}
+
+/* ===== EDIT ===== */
+async function editar(id) {
+  try {
+    const c = await api('clientes/' + id);
+    if (!c) return;
+    document.getElementById('f-nome').value = c.nome || '';
+    document.getElementById('f-telefone').value = c.telefone || '';
+    document.getElementById('f-cpf').value = c.cpf_cnpj || '';
+    document.getElementById('f-endereco').value = c.endereco || '';
+    document.getElementById('f-observacoes').value = c.observacoes || '';
+    mostrarForm(id);
+  } catch (e) { toast('Erro ao carregar cliente: ' + e.message, 'error'); }
+}
+
+/* ===== DELETE ===== */
+function confirmarExcluir(id, nome) {
+  mostrarConfirmacao(
+    'Excluir o cliente <strong>' + nome + '</strong>?<br>Esta ação não pode ser desfeita.',
+    async function() {
+      try {
+        await api('clientes/' + id, { method: 'DELETE' });
+        toast('🗑️ Cliente excluído!', 'success');
+        loadClientes();
+      } catch (e) { toast('Erro ao excluir: ' + e.message, 'error'); }
+    }
+  );
+}
+
+/* ===== VER NOTAS DO CLIENTE ===== */
+function verNotas(id, nome) {
+  location.href = '/nfse/notas?cliente_id=' + id;
+}
+
+/* ===== INIT ===== */
+loadClientes();
+</script>
+</body>
+</html>
