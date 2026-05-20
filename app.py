@@ -256,10 +256,18 @@ async def root():
 
 @app.get("/api/data")
 async def api_data():
-    sessions = get_sessions()
-    config = read_config()
-    sys = sysinfo()
-    return JSONResponse(build_payload(sessions, config, sys))
+    global _remote_data
+    # Se tem dados pusheados, usa eles (Render mode)
+    if _remote_data:
+        return JSONResponse(_remote_data)
+    # Fallback: tentar gateway local
+    try:
+        sessions = get_sessions()
+        config = read_config()
+        sys_data = sysinfo()
+        return JSONResponse(build_payload(sessions, config, sys_data))
+    except Exception:
+        return JSONResponse({"note": "No data yet. pusher.py not connected.", "agents": [], "sessions": [], "sys": {}})
 
 
 @app.get("/api/sysinfo")
