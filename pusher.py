@@ -15,7 +15,6 @@ PUSH_INTERVAL = 5  # seconds
 
 def call_gateway(tool: str, args: dict) -> dict:
     """Chama uma tool do gateway."""
-    import http.client
     payload = json.dumps({"tool": tool, "args": args}).encode()
     req = Request(
         f"{GATEWAY_URL}/tools/invoke",
@@ -28,16 +27,23 @@ def call_gateway(tool: str, args: dict) -> dict:
     )
     try:
         with urlopen(req, timeout=5) as resp:
-            return json.loads(resp.read())
+            raw = json.loads(resp.read())
+            # Gateway response nested: result.content[0].text
+            if raw.get("ok") and "result" in raw:
+                content = raw["result"]["content"]
+                if content and content[0].get("type") == "text":
+                    return json.loads(content[0]["text"])
+            return raw
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": str(e), "sessions": []}
 
 async def collect_and_push():
     """Coleta dados do gateway e envia pro Render."""
     while True:
         try:
             # 1. Get sessions
-            sessions = call_gateway("sessions_list", {"limit": 100})
+            raw = call_gateway("sessions_list", {"limit": 100})
+            sessions = raw.get("sessions", []) if isinstance(raw, dict) else (raw if isinstance(raw, list) else [])
             
             # 2. Get system info
             sysinfo = {
