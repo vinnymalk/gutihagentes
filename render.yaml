@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: openclaw-dashboard
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: PORT
+        value: "8765"
+      - key: OPENCLAW_TOKEN
+        sync: false  # set in Render dashboard — never commit token
+      - key: OPENCLAW_CONFIG
+        value: /etc/openclaw/openclaw.json
+    healthCheckPath: /api/data
+    autoDeploy: true
+    plan: free
