@@ -171,6 +171,8 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 12px;
+    will-change: transform;
+    min-height: 80px;
   }
   .agent-card {
     background: var(--bg3);
@@ -887,7 +889,11 @@ function hideLoading(){
 fetchRest(); // immediate first paint
 connect();   // then switch to WebSocket
 
-// Fallback poll if WS not available
+// Polling: always refresh every 3s (avoid blink via smooth update)
+setInterval(fetchRest, 3000);
+
+// Fallback poll if WS not available (keep as safety)
+setInterval(()=>{ if(!ws||ws.readyState!==1) fetchRest(); }, 10000);
 setInterval(()=>{ if(!ws||ws.readyState!==1) fetchRest(); }, 10000);
 
 // Redraw charts on resize
