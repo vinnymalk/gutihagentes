@@ -546,6 +546,84 @@ async def get_remote_data():
     return {"note": "No pushed data yet. Run pusher.py on the gateway machine."}
 
 
+
+# ── Supervisório: Milestones, Journal, Tasks ────────────────────────────────
+
+_MILESTONES = [
+    {"id": 1, "date": "2026-05-19", "title": "Pítaco ativado no Telegram", "category": "infra", "icon": "🚀", "done": True},
+    {"id": 2, "date": "2026-05-19", "title": "Dashboard publicado no Render", "category": "infra", "icon": "🌐", "done": True},
+    {"id": 3, "date": "2026-05-19", "title": "Hanna integrada ao DeepSeek", "category": "agentes", "icon": "🤖", "done": True},
+    {"id": 4, "date": "2026-05-19", "title": "Camunda instalado via Docker", "category": "infra", "icon": "🐳", "done": True},
+    {"id": 5, "date": "2026-05-19", "title": "Form NoPaper criado via API", "category": "nopaper", "icon": "📋", "done": True},
+    {"id": 6, "date": "2026-05-20", "title": "NFS-e ERP para irmã do Vinny", "category": "app", "icon": "💳", "done": False},
+    {"id": 7, "date": "2026-05-20", "title": "Arquitetura Azure DevOps", "category": "infra", "icon": "☁️", "done": False},
+    {"id": 8, "date": "2026-05-20", "title": "Supervisório completo", "category": "dashboard", "icon": "📊", "done": False},
+]
+
+_JOURNAL = [
+    {"id": 1, "ts": 1779246000000, "source": "Hanna", "text": "Dashboard cyberpunk criado com FastAPI + WebSocket", "type": "marco"},
+    {"id": 2, "ts": 1779247000000, "source": "Pítaco", "text": "8 agentes configurados no ecossistema (5 free + 3 pagos)", "type": "marco"},
+    {"id": 3, "ts": 1779248000000, "source": "Pítaco", "text": "Pusher instalado — dados do gateway fluindo pro Render em tempo real", "type": "marco"},
+    {"id": 4, "ts": 1779249000000, "source": "Demóstenes", "text": "Interface NFS-e mobile-first refinada com modais e toasts", "type": "entrega"},
+    {"id": 5, "ts": 1779250000000, "source": "Hanna", "text": "BPMN Modeler e Form Builder criados como agentes free", "type": "entrega"},
+    {"id": 6, "ts": 1779251000000, "source": "Sócrates", "text": "Pesquisa de Docker + Camunda concluída", "type": "entrega"},
+    {"id": 7, "ts": 1779252000000, "source": "Pítaco", "text": "TESTEHANNAPITACO criado no NoPaper via API REST", "type": "marco"},
+    {"id": 8, "ts": 1779253000000, "source": "Hermes", "text": "Swagger NoPaper mapeado - 537 endpoints catalogados", "type": "entrega"},
+]
+
+_TASKS = [
+    {"id": 1, "title": "Criar formulário Mandado de Notificação completo", "agent": "Form Builder", "status": "pending", "priority": "alta"},
+    {"id": 2, "title": "Mapear todos os forms da Sindicância no NoPaper", "agent": "Form Builder", "status": "pending", "priority": "alta"},
+    {"id": 3, "title": "Exportar BPMN Sindicância com formKeys corretos", "agent": "BPMN Modeler", "status": "pending", "priority": "alta"},
+    {"id": 4, "title": "Documentação completa do fluxo de Sindicância", "agent": "Jornalista", "status": "pending", "priority": "media"},
+    {"id": 5, "title": "Configurar CI/CD GitHub Actions para dashboard", "agent": "Hanna", "status": "pending", "priority": "media"},
+    {"id": 6, "title": "Criar conta Azure para testes com crédito $200", "agent": "Vinny", "status": "blocked", "priority": "alta"},
+    {"id": 7, "title": "Integrar emissão NFS-e com portal da prefeitura", "agent": "Pítaco", "status": "blocked", "priority": "alta"},
+]
+
+@app.get("/api/milestones")
+async def api_milestones():
+    return JSONResponse(_MILESTONES)
+
+@app.get("/api/journal")
+async def api_journal():
+   return JSONResponse(list(reversed(_JOURNAL)))
+
+@app.get("/api/tasks")
+async def api_tasks():
+    return JSONResponse(_TASKS)
+
+@app.post("/api/journal/add")
+async def api_journal_add(request: Request):
+    try:
+        data = await request.json()
+        _JOURNAL.append({
+            "id": len(_JOURNAL) + 1,
+            "ts": int(time.time() * 1000),
+            "source": data.get("source", "Sistema"),
+            "text": data.get("text", ""),
+            "type": data.get("type", "evento")
+        })
+        return JSONResponse({"ok": True})
+    except:
+        return JSONResponse({"ok": False})
+
+@app.post("/api/milestones/add")
+async def api_milestones_add(request: Request):
+    try:
+        data = await request.json()
+        _MILESTONES.append({
+            "id": len(_MILESTONES) + 1,
+            "date": data.get("date", "2026-05-20"),
+            "title": data.get("title", ""),
+            "category": data.get("category", "geral"),
+            "icon": data.get("icon", "⭐"),
+            "done": data.get("done", True)
+        })
+        return JSONResponse({"ok": True})
+    except:
+        return JSONResponse({"ok": False})
+
 # ── WebSocket ─────────────────────────────────────────────────────────────────
 _connections: list[WebSocket] = []
 
