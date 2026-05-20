@@ -9,6 +9,7 @@ from urllib.request import Request, urlopen
 from urllib.error import URLError
 
 GATEWAY_URL = "http://127.0.0.1:18789"
+GATEWAY_TOKEN = os.environ.get("GATEWAY_TOKEN", "25f92f9775893e90e7d879f6415bd0d6f35a302b92d87a48")
 RENDER_URL = os.environ.get("RENDER_DASHBOARD_URL", "https://openclaw-dashboard-kcl1.onrender.com")
 PUSH_INTERVAL = 5  # seconds
 
@@ -19,7 +20,10 @@ def call_gateway(tool: str, args: dict) -> dict:
     req = Request(
         f"{GATEWAY_URL}/tools/invoke",
         data=payload,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {GATEWAY_TOKEN}"
+        },
         method="POST"
     )
     try:
