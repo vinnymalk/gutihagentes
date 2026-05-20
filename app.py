@@ -579,6 +579,9 @@ _TASKS = [
     {"id": 5, "title": "Configurar CI/CD GitHub Actions para dashboard", "agent": "Hanna", "status": "pending", "priority": "media"},
     {"id": 6, "title": "Criar conta Azure para testes com crédito $200", "agent": "Vinny", "status": "blocked", "priority": "alta"},
     {"id": 7, "title": "Integrar emissão NFS-e com portal da prefeitura", "agent": "Pítaco", "status": "blocked", "priority": "alta"},
+    {"id": 8, "title": "Agente de triagem para mensagens da irmã do Vinny", "agent": "Hermes ✉️", "status": "in_progress", "priority": "alta"},
+    {"id": 9, "title": "Parser automático de dados NFS-e (tomador, CPF, valor)", "agent": "Pítaco ⚖️", "status": "pending", "priority": "alta"},
+    {"id": 10, "title": "Criar pipeline: Telegram → Parsing → Banco → Dashboard", "agent": "Hanna 🔱", "status": "pending", "priority": "alta"},
 ]
 
 @app.get("/api/milestones")
